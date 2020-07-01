@@ -1,0 +1,19 @@
+QT实例：
+迭代器模式 ：提供通用方法访问集合元素的类、函数或编程元素，如果没有类型限制，则他们就是迭代器设计模式的实现。C++迭代器、Java风格的迭代器以及foreach循环，都是迭代器模式的例子。QT中有许多类都提供了针对各种数据类型的专门化迭代，例如：QDirIterator,QSortFilterProxyModel,QTreeWidgetItemIterator和QDomNodeList.当引入迭代器时，其定义必须包含足够的信息，以使它能够在容器中从一个项移动到下一个项。
+迭代器：在容器中存储元素之后，迟早都要遍历容器对其中每个元素进行某种操作。迭代器是一个提供容器中的每个元素进行间接访问的对象，它专门被设计用在循环之中。
+	与Java风格的迭代器相比，STL风格的迭代器的行为更与指针类似。迭代器与指针的一个重要差异是：不存在与指针的空值对应的迭代器值。例如：使用指针的函数在搜素集合中的项时，如果搜素失败则可以返回一个空指针。不存在对应的、可被广泛认知的迭代器值能够表示一个失败的、基于迭代器的搜索。
+QStringList与迭代：对于文本处理，对字符串串列进行处理是有用的。QStringList实际上就是一个QList<QString>,这样就能够使用QList的public接口。
+	几种迭代方式：
+	(1)  Qt foreach循环，类似于Perl/Python和Java1.5风格的for循环
+		foreach(const QString& str,list){
+			qDebug()<<str;
+		}
+	(2) C++ STL风格的迭代
+		for(QStringList::iterator it = list.begin();it != list.end();++it){
+			QString current = *it;
+		} 
+	(3) Java 1.2风格的迭代器
+		QListIterator<QString> itr(list2);
+		while(itr.hasNext()){
+			QString current = itr.next();
+		}

@@ -1,0 +1,57 @@
+
+组合模式（composite pattern):通过树状结构来表示数据的部分-整体的层次结构，以便使用较为简单（组件）的部分来创建出复杂（复合）
+的对象。
+组合模式使用的场景是：客户无须区分简单的组成部分与又简单部分所组成的较为复杂的部分。
+有两个不同的类可以方便地描述上述两种角色：
+	（1）复合对象是包含可以包含子对象的类
+	（2）组件对象是可以拥有一个父对象的类
+组合模式在QT中的应用：
+	许多Qt类都用到了组合模式：QObject,以及以QObject为基类所派生出的类，在任何基于树的结构体中都可以找到组合模式。在QObject类
+中，QObject既是一个复合对象也是一个组件对象。可以把QObject对象之间的整体-部分关系表达成父-子对象关系。在这样的一棵树中，最高层
+（即最为复合的）QObject对象(即树的根)将会有若干个子对象而没有父对象。最简单的QObject（即这棵树的叶子节点)斗殴一个父对象而没有
+子对象。客户代码可以递归地处理此树种的每一个节点。
+    （1）查找子对象
+			每个QObject都可以有不限数量的QObject子对象。这些子对象的地址会存放在一个特殊的QObject指针容器内。每个 QObject 父对象
+		都会管理自己的子对象。这就意味着，在调用父对象析构函数时也会调用子对象的析构函数。QObject有一个成员函数，可以返回一个指向
+		主对象中全部子对象的指针列表。
+			函数原型： const QObjectList& QObject::children()const;
+			子对象在该列表中的出现次序是他们在添加到该列表中时的（最初）次序。在一些特定的运行时操作可以改变该次序。
+			QObject还提供两个名称为findChildren()的重载(递归)函数。每个都会返回一个满足特定条件的子对象列表。该函数被重载之后的
+		一种函数类型具有形式： QList<T> parentObj.findChildren<T>(const QString& name= QString())const;
+		该函数返回一个类型为T的子对象列表，其对象名与name相等。
+	（2）设置父对象
+		给某个对象设置父对象，就会隐含地将此对象的指针添加到父对象的子对象列表中，例如：objA->setparent(objB);。 
+	如果随后再运行objA->setparent(objC);，那么 objA 的指针就会从 objB 的子对象列表中移除，然后添加到 objC 的子对象列表中。这一操作
+	被称为重新父化。
+
+QT实例：
+class Person : public QObject
+{
+public:
+    explicit Person(QString name, QObject *parent = 0):QObject(parent){
+		setObjectName(name);
+    cout << QString("Constructing Person: %1").arg(name)<< endl;
+	}
+    virtual ~Person(){
+		cout << QString("Destroying Person: %1").arg(objectName()) <<endl;
+	}
+};
+
+int main(int argc, char *argv[])
+{
+    QObject bunch;
+
+    Person* mike = new Person("Mike",&bunch);
+    Person* carol = new Person("Carol",&bunch);
+    new Person("Greg",mike);
+    new Person("Bobby",carol);
+
+    Person* child = bunch.findChild<Person* >("Mike");
+    cout << child << "\t" << mike << endl;
+
+    Person* alice = new Person("Alice",&bunch);
+    cout <<  &bunch << "\t" << alice->parent() << endl;
+
+    bunch.dumpObjectTree();
+    return 0;
+}

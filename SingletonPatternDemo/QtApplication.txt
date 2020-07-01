@@ -1,0 +1,18 @@
+Monostate模式：允许多个实例共享相同状态的类，可以看成是Monostate模式的一种实现。拥有相同组织/应用程序名称的两个QSettings实例，可以用来访问同一个永久映射数据。这简化了应用程序从不同源文件访问公共设置值的过程。（QSettings是Monostate模式的一种实现。）
+
+QSettings:保存和恢复应用程序的状态
+大多数桌面应用程序都有让用户对设置进行配置的方式。而且，所有的设置、喜好和可选项都是需要是持久不变的。实现这一目标的机制都包含在QSettings中。
+QSettings在首次使用之前必须用应用程序的名称、组织名和组织域进行初始化。这样可以防止一个应用程序的设置值不小心覆盖了另一个应用程序的设置值。
+当开发一个新的QMainWindow应用程序时，最先希望持久保持的设置值很可能是窗口的大小和位置。也可能希望保持由应用程序最近打开的那些文档的名称。
+QSettings会管理键值对的永久映射关系。它是一个QObject，并且会使用一些与QObject相似的属性接口-setValue()和value()-来设置和获得它的值。这个类可以用来存储任何需要在多次执行之间进行记忆的数据。
+QSettings需要一个组织名和一个应用程序名，但当使用默认的构造函数时，QSettings会从QApplication中获得这些值。每个名称组合都会定义一个唯一的永久映射，这使得不会与其他命名的Qt应用程序产生冲突。
+使用实例：
+	QQpplication app(argc,argv);
+	app.setOrganizationName("objectlearing");
+	app.setOrganizationDomain("objectlearing.net");
+	app.setApplicationName("mainwindow-test");
+	//
+	QSettings settings;
+	QPoint pos = settings.value("pos",QPoint(200,200)).toPoint();
+	move(pos);
+	settings.setValue("pos",pos());

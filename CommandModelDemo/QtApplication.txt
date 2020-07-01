@@ -1,0 +1,66 @@
+
+
+命令模式： 把操作封装为具有公共执行接口的对象。这样使得将操作放置在一个队列之中、日志维护操作以及取消已执行操作的影响成为可能。
+
+
+利用QT实现命令模式的几种方式：
+    （1） 可以创建一些命令并在适当的容器内对它们进行排队。
+    （2） 通过把QUndoCommmand放到QUndoStack上即可得到执行。
+    （3） 如果需要同时执行各个命令，则可以从QRunnnable派生它们，并使用QtConcurrent::Run()在线程池中对它们进行调度。
+    （4） 获取会把一些命令序列化到文件并在随后再次对它们进行调用（也有可能是在另一台机器上）,以用来实现批处理或者分布式执行。
+
+
+QT中的undo和redo机制：
+        Qt的重做机制是使用命令模式来实现的，同时重写框架中的undo/redo函数来进行撤销操作。
+        （1） QUndoCommand是所有存储在QUndoStack队列中命令类的接口，对文档的撤销与重做操作可以通过重写redo和undo虚函数来进行重新设计。
+        （2） QUndoStack是存储命令对象的容器，新命令通过push()加入到容器，通过运行redo()或undo(）来调用命令对象的redo或undo接口。
+        （3） QUndoGroup是一个容器队列，容器内容为存储着命令对象的队列。由于每个系统仅有一个redo或undo按钮，但是多个文档操作却有多个QUndoStack，如何判断仅有的一个按钮
+    操纵多个QundoStack,此容器队列就发挥了重要作用。它存在一个activeStack,每次redo或undo时，总是调用activestack的接口。
+        （4） QUndoView是显示undo堆栈中内容的一个列表组件，在这个视图中点击命令的名称也可以实现与Undo/Redo按钮相同的作用。
+QT Undo 框架的使用方法：
+    采用Qt's Undo FrameWork实现undo和redo操作。每类操作继承自QUndoCommand类，并实现redo和undo这两个虚函数，在在动作执行的时候创建此子类的对象，并放入
+QUndoStack。用QUndoStack创建redo和undo这两个QAction，此QAction不需要在进行设置信号槽了，因为在createRedoAction和createUndoAction生成QAction时已加入。
+
+
+QT实例：
+1.继承QUndoCommand,重写redo和undo接口
+    class RemoveShapeCommand : public QUndoCommand
+    {
+    public:
+        RemoveShapeCommand(Document *doc, const QString &shapeName, QUndoCommand *parent = 0)：m_doc（doc）{
+            setText(QObject::tr("Remove %1").arg(shapeName));
+            m_doc = doc;
+            m_shape = doc->shape(shapeName);
+            m_shapeName = shapeName;
+        }
+        void undo(){
+            m_shapeName = m_doc->addShape(m_shape);
+        }
+        void redo(){
+            m_doc->deleteShape(m_shapeName);
+        }
+
+    private:
+        Document *m_doc;
+        Shape m_shape;
+        QString m_shapeName;
+    };
+2.创建命令容器QUndoStack 
+    QUndoStack *m_undoStack = new QUndoStack(this);
+3.将命令对象压入堆栈中
+    m_undoStack->push(new RemoveShapeCommand(doc, shapeName));
+4.创建QUndoGroup组，并加入命令对象容器
+    QUndoGroup* m_undoGroup = new QUndoGroup(this);
+    m_undoGroup->addStack(m_undoStack);
+    m_undoGroup->removeStack(m_undoStack);
+5.生成QAction,用于触发堆栈
+    QAction *undoAction = m_undoGroup->createUndoAction(this);
+    QAction *redoAction = m_undoGroup->createRedoAction(this);
+    undoAction->setIcon(QIcon(":/icons/undo.png"));
+    redoAction->setIcon(QIcon(":/icons/redo.png"));
+6.设置活动命令堆栈
+    m_undoGroup->setActiveStack(m_undoStack);
+7.生成列表组件，QUndoView
+    QUndoView *undoView = new QUndoView(dockWidgetContents);;
+    undoView->setGroup(m_undoGroup);
+    undoView->setCleanIcon(QIcon(":/icons/ok.png"));
